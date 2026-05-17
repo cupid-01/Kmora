@@ -1,0 +1,2 @@
+# Kmora
+shared memory
