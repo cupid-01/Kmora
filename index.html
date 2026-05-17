@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kmora - Digital Memory Archive">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Kmora</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 启动画面 -->
+<div class="splash-screen" id="splashScreen">
+    <div class="splash-content">
+        <div class="splash-logo"><i class="fas fa-camera-retro"></i></div>
+        <h1 data-i18n="appName">Kmora</h1>
+        <p data-i18n="appSlogan">数字记忆时光库</p>
+        <div class="splash-loader"></div>
+    </div>
+</div>
+
+<!-- 导航栏 -->
+<nav class="navbar" id="navbar">
+    <div class="nav-inner">
+        <a href="#" class="nav-brand" onclick="App.goHome(); return false;">
+            <div class="logo"><i class="fas fa-camera-retro"></i></div>
+            <span>Kmora</span>
+        </a>
+        <div class="nav-links">
+            <div class="lang-switcher" id="langSwitcher">
+                <button class="lang-btn active" onclick="I18n.setLang('zh')" data-lang="zh">中</button>
+                <button class="lang-btn" onclick="I18n.setLang('en')" data-lang="en">EN</button>
+                <button class="lang-btn" onclick="I18n.setLang('ko')" data-lang="ko">한</button>
+            </div>
+            <button class="nav-btn" onclick="Ranking.open()" title="榜单">
+                <i class="fas fa-trophy"></i>
+            </button>
+            <button class="nav-btn" onclick="Upload.open()" title="发布">
+                <i class="fas fa-plus"></i>
+            </button>
+            <div class="nav-user" id="navUser" style="display:none;">
+                <span class="avatar" id="navAvatar" onclick="Settings.open()">U</span>
+            </div>
+            <button class="nav-btn" id="loginBtn" onclick="Auth.openLogin()">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- 主页内容 -->
+<main class="main" id="mainPage">
+    <div class="hero-section">
+        <h1 data-i18n="galleryTitle">记忆画廊</h1>
+        <p data-i18n="gallerySubtitle">和我们一起分享美好瞬间</p>
+    </div>
+    <div class="waterfall-container" id="waterfallContainer">
+        <div class="waterfall" id="photoGrid"></div>
+    </div>
+    <div class="empty-state" id="emptyState">
+        <div class="empty-icon"><i class="fas fa-images"></i></div>
+        <h3 data-i18n="emptyTitle">还没有照片</h3>
+        <p data-i18n="emptyDesc">点击右下角按钮上传第一张照片</p>
+    </div>
+</main>
+
+<!-- 个人中心页 -->
+<div class="page" id="profilePage" style="display:none;">
+    <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar">U</div>
+        <h2 id="profileName">用户名</h2>
+        <p id="profileEmail">user@email.com</p>
+        <div class="profile-stats">
+            <div><span id="profileCount">0</span><label data-i18n="statPosts">发布</label></div>
+            <div><span id="profileLikes">0</span><label data-i18n="statLikes">获赞</label></div>
+        </div>
+    </div>
+    <div class="profile-content">
+        <h3 data-i18n="myPosts">我的发布</h3>
+        <div class="waterfall" id="myPhotoGrid"></div>
+    </div>
+</div>
+
+<!-- 榜单页面 -->
+<div class="page" id="rankingPage" style="display:none;">
+    <div class="ranking-header">
+        <div class="ranking-icon"><i class="fas fa-crown"></i></div>
+        <h1 data-i18n="rankingTitle">热门榜单</h1>
+        <p data-i18n="rankingSubtitle">最受欢迎的记忆</p>
+    </div>
+
+    <!-- 榜首冠军 -->
+    <div class="ranking-champion" id="rankingChampion" style="display:none;">
+        <div class="champion-badge">
+            <i class="fas fa-crown"></i>
+            <span data-i18n="champion">冠军</span>
+        </div>
+        <div class="champion-card" onclick="Detail.open(this.dataset.postId)">
+            <div class="champion-media" id="championMedia"></div>
+            <div class="champion-info">
+                <div class="champion-author">
+                    <div class="avatar" id="championAvatar">U</div>
+                    <div>
+                        <h3 id="championName">用户名</h3>
+                        <span id="championTime">2024-01-01</span>
+                    </div>
+                </div>
+                <h2 class="champion-title" id="championTitle">标题</h2>
+                <p class="champion-desc" id="championDesc">描述...</p>
+                <div class="champion-stats">
+                    <span class="champion-likes"><i class="fas fa-heart"></i> <span id="championLikes">0</span></span>
+                    <span class="champion-comments"><i class="fas fa-comments"></i> <span id="championComments">0</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 榜单列表 -->
+    <div class="ranking-list" id="rankingList"></div>
+
+    <!-- 空状态 -->
+    <div class="ranking-empty" id="rankingEmpty">
+        <div class="empty-icon"><i class="fas fa-trophy"></i></div>
+        <h3 data-i18n="rankingEmpty">还没有上榜内容</h3>
+        <p data-i18n="rankingEmptyDesc">快去发布你的第一条记忆吧！</p>
+    </div>
+</div>
+
+<!-- 悬浮发布按钮 -->
+<button class="fab" onclick="Upload.open()" id="fabBtn">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- ========== 登录弹窗 ========== -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal-card flip-card">
+        <div class="flip-card-inner" id="loginFlipInner">
+            <div class="flip-card-front">
+                <div class="modal-header">
+                    <div class="modal-icon"><i class="fas fa-user-circle"></i></div>
+                    <h2 data-i18n="loginTitle">欢迎回来</h2>
+                    <p data-i18n="loginSubtitle">登录以分享你的记忆</p>
+                </div>
+                <form id="loginForm" onsubmit="Auth.login(event)">
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> <span data-i18n="email">邮箱</span></label>
+                        <input type="email" id="loginEmail" placeholder="" data-i18n-placeholder="emailPlaceholder" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> <span data-i18n="password">密码</span></label>
+                        <input type="password" id="loginPassword" placeholder="" data-i18n-placeholder="passwordPlaceholder" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <i class="fas fa-sign-in-alt"></i> <span data-i18n="loginBtn">登录</span>
+                    </button>
+                    <div class="form-links">
+                        <button type="button" class="link-btn" onclick="Auth.flipToRegister()">
+                            <span data-i18n="noAccount">还没有账号？立即注册</span> <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-ghost" onclick="Auth.close()" data-i18n="cancel">取消</button>
+                </form>
+            </div>
+            <div class="flip-card-back">
+                <div class="modal-header">
+                    <div class="modal-icon"><i class="fas fa-user-plus"></i></div>
+                    <h2 data-i18n="registerTitle">创建账号</h2>
+                    <p data-i18n="registerSubtitle">开启你的记忆之旅</p>
+                </div>
+                <form id="registerForm" onsubmit="Auth.register(event)">
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> <span data-i18n="email">邮箱</span></label>
+                        <div class="input-row">
+                            <input type="email" id="regEmail" placeholder="" data-i18n-placeholder="emailPlaceholder" required>
+                            
+                        </div>
+                    </div>
+                                        <div class="form-group">
+                        <label><i class="fas fa-user"></i> <span data-i18n="nickname">昵称</span></label>
+                        <input type="text" id="regNickname" placeholder="" data-i18n-placeholder="nicknamePlaceholder" required maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> <span data-i18n="password">密码</span></label>
+                        <input type="password" id="regPassword" placeholder="" data-i18n-placeholder="passwordPlaceholder" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <i class="fas fa-user-plus"></i> <span data-i18n="registerBtn">注册并登录</span>
+                    </button>
+                    <div class="form-links">
+                        <button type="button" class="link-btn" onclick="Auth.flipToLogin()">
+                            <i class="fas fa-arrow-left"></i> <span data-i18n="hasAccount">已有账号？去登录</span>
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-ghost" onclick="Auth.close()" data-i18n="cancel">取消</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 上传弹窗 ========== -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-card slide-up">
+        <div class="modal-header">
+            <div class="modal-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+            <h2 data-i18n="uploadTitle">发布记忆</h2>
+            <p data-i18n="uploadSubtitle">上传照片或视频</p>
+        </div>
+        <div class="upload-steps" id="uploadSteps">
+            <div class="upload-step active" id="step1">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-area-icon"><i class="fas fa-images"></i></div>
+                    <h3 data-i18n="uploadClick">点击选择文件</h3>
+                    <p data-i18n="uploadFormats">支持 JPG、PNG、GIF、MP4</p>
+                    <span class="upload-hint" data-i18n="uploadMax">最大 10MB</span>
+                    <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="Upload.handle(this.files[0])">
+                </div>
+            </div>
+            <div class="upload-step" id="step2">
+                <div class="preview-container">
+                    <img class="upload-preview" id="uploadPreview" alt="preview">
+                    <video class="upload-preview" id="uploadPreviewVideo" controls style="display:none;"></video>
+                    <div class="preview-overlay" id="previewOverlay">
+                        <button class="preview-change" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-exchange-alt"></i> <span data-i18n="changeFile">更换</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="compress-info" id="compressInfo">
+                    <i class="fas fa-compress-alt"></i>
+                    <span data-i18n="compressInfo">图片将被智能压缩以节省空间，原图仍可通过下载获取</span>
+                </div>
+                <div class="upload-meta">
+                    <div class="form-group">
+                        <label><i class="fas fa-heading"></i> <span data-i18n="titleLabel">标题</span></label>
+                        <input type="text" id="uploadTitle" placeholder="" data-i18n-placeholder="titlePlaceholder" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> <span data-i18n="descLabel">描述</span></label>
+                        <textarea id="uploadDesc" placeholder="" data-i18n-placeholder="descPlaceholder" rows="3" maxlength="200"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="locationLabel">地点</span></label>
+                        <input type="text" id="uploadLocation" placeholder="" data-i18n-placeholder="locationPlaceholder" maxlength="50">
+                    </div>
+                </div>
+                <div class="upload-actions">
+                    <button class="btn btn-primary btn-large" onclick="Upload.publish()">
+                        <i class="fas fa-paper-plane"></i> <span data-i18n="publishBtn">发布</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="Upload.close()" data-i18n="cancel">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 3D翻转详情页（支持滑动切换） ========== -->
+<div class="modal-overlay detail-overlay" id="detailModal">
+    <div class="detail-container">
+        <!-- 滑动提示 -->
+        <div class="swipe-hint swipe-hint-left" id="swipeHintLeft">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        <div class="swipe-hint swipe-hint-right" id="swipeHintRight">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+
+        <div class="detail-flipper" id="detailFlipper">
+            <!-- A面：媒体展示 -->
+            <div class="detail-face detail-front">
+                <div class="detail-media-wrap" id="detailMediaWrap">
+                    <div class="detail-media" id="detailMedia"></div>
+                </div>
+                <div class="detail-front-info">
+                    <div class="swipe-indicator">
+                        <span class="swipe-dot" id="swipeDotPrev"></span>
+                        <span class="swipe-text"><i class="fas fa-hand-pointer"></i> <span data-i18n="swipeHint">左右滑动切换</span></span>
+                        <span class="swipe-dot" id="swipeDotNext"></span>
+                    </div>
+                    <button class="flip-trigger" onclick="Detail.flip()">
+                        <i class="fas fa-info-circle"></i> <span data-i18n="viewDetails">查看详情</span>
+                    </button>
+                </div>
+                <button class="detail-close" onclick="Detail.close()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- B面：信息和交互 -->
+            <div class="detail-face detail-back">
+                <div class="detail-back-content">
+                    <div class="detail-back-header">
+                        <button class="flip-trigger back" onclick="Detail.flip()">
+                            <i class="fas fa-image"></i> <span data-i18n="viewPhoto">查看照片</span>
+                        </button>
+                        <button class="detail-close" onclick="Detail.close()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="detail-author">
+                        <div class="avatar" id="detailAvatar">U</div>
+                        <div class="author-info">
+                            <h4 id="detailName">用户名</h4>
+                            <span id="detailTime">2024-01-01</span>
+                        </div>
+                    </div>
+                    <div class="detail-text">
+                        <h2 class="detail-title" id="detailTitle">标题</h2>
+                        <p class="detail-desc" id="detailDesc">描述...</p>
+                        <div class="detail-location" id="detailLocation">
+                            <i class="fas fa-map-marker-alt"></i> <span></span>
+                        </div>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="action-btn like-btn" id="likeBtn" onclick="Like.toggle()">
+                            <i class="fas fa-heart"></i><span id="likeCount">0</span>
+                        </button>
+                        <button class="action-btn" onclick="Download.start()">
+                            <i class="fas fa-download"></i> <span data-i18n="downloadOriginal">下载原图</span>
+                        </button>
+                        <button class="action-btn delete-btn" id="deleteBtn" onclick="Delete.confirm()" style="display:none;">
+                            <i class="fas fa-trash"></i> <span data-i18n="delete">删除</span>
+                        </button>
+                    </div>
+                    <div class="comments-section">
+                        <h4><i class="fas fa-comments"></i> <span data-i18n="comments">评论</span></h4>
+                        <div class="comments-list" id="commentList"></div>
+                        <div class="comment-input-row">
+                            <input type="text" id="commentInput" placeholder="" data-i18n-placeholder="commentPlaceholder" maxlength="200">
+                            <button onclick="Comments.add()"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 设置弹窗（含主题色选择 + 邮箱修改） ========== -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-card slide-up">
+        <div class="modal-header">
+            <div class="modal-icon"><i class="fas fa-cog"></i></div>
+            <h2 data-i18n="settingsTitle">设置</h2>
+            <p>Kmora v3.0</p>
+        </div>
+        <div class="settings-list">
+
+            <!-- 邮箱修改（新增） -->
+            <div class="settings-item" id="emailEditItem" style="display:none;">
+                <label><i class="fas fa-envelope"></i> <span data-i18n="currentEmail">当前邮箱</span></label>
+                <input type="email" id="currentEmailDisplay" disabled style="opacity:0.6; cursor:not-allowed;">
+
+                <label style="margin-top:12px;"><i class="fas fa-pen"></i> <span data-i18n="newEmail">新邮箱</span></label>
+                <input type="email" id="newEmailInput" placeholder="" data-i18n-placeholder="newEmailPlaceholder">
+
+                <label style="margin-top:12px;"><i class="fas fa-lock"></i> <span data-i18n="confirmPassword">确认密码</span></label>
+                <input type="password" id="confirmPasswordInput" placeholder="" data-i18n-placeholder="passwordPlaceholder">
+
+                <button class="btn btn-primary" onclick="Settings.updateEmail()" style="margin-top:12px; margin-bottom:0;">
+                    <i class="fas fa-save"></i> <span data-i18n="updateEmail">更新邮箱</span>
+                </button>
+            </div>
+
+            <!-- 分割线（新增） -->
+            <div class="settings-divider" id="settingsDivider" style="display:none;"></div>
+
+            <div class="settings-item">
+                <label><i class="fas fa-server"></i> <span data-i18n="apiUrl">API 地址</span></label>
+                <input type="text" id="apiUrl" placeholder="https://api.kmora.app" value="">
+            </div>
+            <div class="settings-item">
+                <label><i class="fas fa-hdd"></i> <span data-i18n="storageMode">存储模式</span></label>
+                <div class="segmented-control">
+                    <button class="segment active" onclick="Settings.setMode('local', this)" data-i18n="local">本地</button>
+                    <button class="segment" onclick="Settings.setMode('api', this)" data-i18n="cloud">云端</button>
+                </div>
+            </div>
+
+            <!-- 主题色选择 -->
+            <div class="settings-item">
+                <label><i class="fas fa-palette"></i> <span data-i18n="accentColor">主题颜色</span></label>
+                <div class="color-picker">
+                    <button class="color-option active" data-color="emerald" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="Settings.setAccent('emerald', this)" title="Emerald"></button>
+                    <button class="color-option" data-color="blue" style="background: linear-gradient(135deg, #3b82f6, #2563eb);" onclick="Settings.setAccent('blue', this)" title="Blue"></button>
+                    <button class="color-option" data-color="purple" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);" onclick="Settings.setAccent('purple', this)" title="Purple"></button>
+                    <button class="color-option" data-color="rose" style="background: linear-gradient(135deg, #f43f5e, #e11d48);" onclick="Settings.setAccent('rose', this)" title="Rose"></button>
+                    <button class="color-option" data-color="amber" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="Settings.setAccent('amber', this)" title="Amber"></button>
+                    <button class="color-option" data-color="cyan" style="background: linear-gradient(135deg, #06b6d4, #0891b2);" onclick="Settings.setAccent('cyan', this)" title="Cyan"></button>
+                </div>
+            </div>
+
+            <!-- 主题明暗 -->
+            <div class="settings-item">
+                <label><i class="fas fa-paint-brush"></i> <span data-i18n="theme">主题</span></label>
+                <div class="segmented-control">
+                    <button class="segment active" onclick="Settings.setTheme('light', this)" data-i18n="light">浅色</button>
+                    <button class="segment" onclick="Settings.setTheme('dark', this)" data-i18n="dark">深色</button>
+                </div>
+            </div>
+
+            <!-- 背景样式（修复：移入 settings-list 内） -->
+            <div class="settings-item">
+                <label><i class="fas fa-image"></i> <span data-i18n="background">背景样式</span></label>
+                <div class="bg-picker">
+                    <button class="bg-option active" data-bg="default" onclick="Settings.setBg('default', this)">
+                        <div class="bg-preview" style="background: linear-gradient(180deg, #f8fafc, #ffffff);"></div>
+                        <span data-i18n="bgDefault">默认</span>
+                    </button>
+                    <button class="bg-option" data-bg="warm" onclick="Settings.setBg('warm', this)">
+                        <div class="bg-preview" style="background: linear-gradient(180deg, #fff7ed, #ffedd5);"></div>
+                        <span data-i18n="bgWarm">暖色</span>
+                    </button>
+                    <button class="bg-option" data-bg="cool" onclick="Settings.setBg('cool', this)">
+                        <div class="bg-preview" style="background: linear-gradient(180deg, #f0f9ff, #e0f2fe);"></div>
+                        <span data-i18n="bgCool">冷色</span>
+                    </button>
+                    <button class="bg-option" data-bg="nature" onclick="Settings.setBg('nature', this)">
+                        <div class="bg-preview" style="background: linear-gradient(180deg, #f0fdf4, #dcfce7);"></div>
+                        <span data-i18n="bgNature">自然</span>
+                    </button>
+                    <button class="bg-option" data-bg="elegant" onclick="Settings.setBg('elegant', this)">
+                        <div class="bg-preview" style="background: linear-gradient(180deg, #faf5ff, #f3e8ff);"></div>
+                        <span data-i18n="bgElegant">优雅</span>
+                    </button>
+                    <button class="bg-option" data-bg="dark" onclick="Settings.setBg('dark', this)">
+                        <div class="bg-preview" style="background: linear-gradient(180deg, #0f172a, #1e293b);"></div>
+                        <span data-i18n="bgDark">深色</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- 开发者模式入口 -->
+        <div class="settings-item dev-mode-item" id="devModeItem" style="display:none; padding: 0 24px;">
+            <label><i class="fas fa-code"></i> <span data-i18n="devMode">开发者模式</span></label>
+            <button class="btn btn-primary" onclick="DevMode.open()" style="margin-bottom:0;">
+                <i class="fas fa-users-cog"></i> <span data-i18n="userManagement">用户管理</span>
+            </button>
+        </div>
+
+        <div class="settings-actions">
+            <button class="btn btn-primary" onclick="Settings.save()">
+                <i class="fas fa-save"></i> <span data-i18n="save">保存</span>
+            </button>
+            <button class="btn btn-secondary" onclick="Settings.export()">
+                <i class="fas fa-file-export"></i> <span data-i18n="exportData">导出数据</span>
+            </button>
+            <button class="btn btn-secondary" onclick="Settings.close()" data-i18n="close">关闭</button>
+            <button class="btn btn-danger" onclick="Auth.logout()">
+                <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">退出登录</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 删除确认弹窗 ========== -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-card confirm-card">
+        <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3 data-i18n="confirmDelete">确认删除</h3>
+        <p data-i18n="deleteWarning">此操作不可撤销，确定要删除这条记忆吗？</p>
+        <div class="confirm-actions">
+            <button class="btn btn-danger" onclick="Delete.execute()">
+                <i class="fas fa-trash"></i> <span data-i18n="delete">删除</span>
+            </button>
+            <button class="btn btn-secondary" onclick="Delete.cancel()" data-i18n="cancel">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 开发者模式弹窗 ========== -->
+<div class="modal-overlay" id="devModeModal">
+    <div class="modal-card slide-up" style="max-width: 600px;">
+        <div class="modal-header">
+            <div class="modal-icon"><i class="fas fa-users-cog"></i></div>
+            <h2 data-i18n="userManagement">用户管理</h2>
+            <p data-i18n="devModeDesc">开发者控制台</p>
+        </div>
+        <div class="dev-stats" id="devStats"></div>
+        <div class="dev-table-container">
+            <table class="dev-table" id="devUserTable">
+                <thead>
+                    <tr>
+                        <th data-i18n="devId">ID</th>
+                        <th data-i18n="devEmail">邮箱</th>
+                        <th data-i18n="devNickname">昵称</th>
+                        <th data-i18n="devPosts">发布</th>
+                        <th data-i18n="devLikes">获赞</th>
+                        <th data-i18n="devJoined">注册时间</th>
+                    </tr>
+                </thead>
+                <tbody id="devUserTableBody"></tbody>
+            </table>
+        </div>
+        <div class="settings-actions">
+            <button class="btn btn-secondary" onclick="DevMode.exportUsers()">
+                <i class="fas fa-file-export"></i> <span data-i18n="exportUsers">导出用户</span>
+            </button>
+            <button class="btn btn-secondary" onclick="DevMode.close()" data-i18n="close">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast 提示 -->
+<div class="toast" id="toast"></div>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p data-i18n="compressing">正在压缩...</p>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
